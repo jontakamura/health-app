@@ -43,7 +43,7 @@
     ['box_squat_jump', 'Box squat → jump over box', 'rw', 'strength', { back: 'goblet_box_squat' }],
     ['goblet_box_squat', 'Goblet box squat (or belt squat)', 'rw', 'strength'],
     ['belt_squat', 'Belt squat', 'rw', 'strength'],
-    ['sgdl_band', 'Snatch-grip DL (band around knees)', 'rw', 'strength', { back: ['physio_curl', 'reverse_hyper', 'glute_bridge'] }],
+    ['sgdl_band', 'Snatch-grip DL/RDL (band around knees)', 'rw', 'strength', { back: ['physio_curl', 'reverse_hyper', 'glute_bridge'] }],
     ['physio_curl', 'Physio ball leg curls', 'r', 'strength'],
     ['reverse_hyper', 'Reverse hyper (light, controlled)', 'rw', 'strength'],
     ['ghr_explosive', 'GHR — 10s hold + explosive reps', 'trw', 'strength'],
@@ -112,10 +112,39 @@
     ['forearms', 'Forearms', 'r', 'accessory'],
   ];
 
+  // weighted pull-ups / chin-ups: weight = added belt weight
+  const BELT = ['pullup_iso_explosive', 'pullup', 'pullup_cluster', 'chin_up', 'pullup_iso', 'pullup_slow'];
   const library = {};
   LIB.forEach(([id, name, fields, cat, swaps]) => {
     library[id] = { id, name, fields, cat, swaps: swaps || {} };
+    if (BELT.includes(id)) library[id].belt = true;
   });
+  library.warmup.name = 'Warm-up';
+  library.core.name = 'Core';
+
+  // Jon's warm-up, step by step (his words). kind: check | timer (countdown, dur sec) | stopwatch (count up, logs seconds)
+  // flare: per-flag overrides shown when that flare toggle is on
+  const WARMUP_STEPS = [
+    { id: 'foam', title: 'Foam roll', detail: '1 min', kind: 'timer', dur: 60 },
+    { id: 'hang', title: 'Dead hang from bar', detail: '30–60 sec — tap Start, tap again to log', kind: 'stopwatch', target: '30–60s',
+      flare: { shoulder: { detail: 'Shoulder flare: keep feet on a box to unload, 20–30 sec, stop if it pinches' } } },
+    { id: 'backmob', title: 'Back mobility on all fours', detail: 'Stick one leg out, sink back, reach the underneath arm through, then rotate it up toward the sky. 3 reps, then switch sides',
+      flare: { back: { detail: 'Back flare: keep the rotation gentle — small, slow, pain-free range only. 3 reps, then switch sides' } } },
+    { id: 'hipflex1', title: 'Hip flexor stretch', detail: '' },
+    { id: 'ninety', title: 'Hip 90/90s', detail: 'Bring chest down to the knee for more stretch',
+      flare: { back: { detail: 'Back flare: stay tall — skip folding the chest down if the back complains' } } },
+    { id: 'hiprot', title: 'Hip external & internal rotations', detail: 'In 90/90' },
+    { id: 'heel', title: 'Back heel raises', detail: 'Heel raises ×5, then holding the heel up push the knee up ×5, then hold up 10 sec. Switch sides — 1 round each side' },
+    { id: 'overback', title: 'Stick warm-up: over-and-backs ×5', detail: 'Shoulder pass-throughs with hands on the stick',
+      flare: { shoulder: { title: 'Wall slides ×5 (instead of over-and-backs)', detail: 'Shoulder flare: or very wide grip on the stick, small range, stop short of any pinch' } } },
+    { id: 'ohs', title: 'Overhead squats with stick ×5', detail: '',
+      flare: { shoulder: { title: 'Bodyweight squats ×5, stick across the front', detail: 'Shoulder flare: no overhead — wide grip at chest/shoulder height' }, back: { detail: 'Back flare: shallow depth, stay braced' } } },
+    { id: 'spine', title: 'Stick along the spine', detail: '',
+      flare: { back: { detail: 'Back flare: hinge only as far as it stays pain-free' } } },
+    { id: 'hipflex2', title: 'Hip flexor stretches', detail: '5 each side' },
+    { id: 'pogo', title: 'Vibration and pogo jumps', detail: '',
+      flare: { back: { detail: 'Back flare: vibration + small, soft pogos only' } } },
+  ];
 
   // Extra prehab auto-added when a flare toggle is on (inserted after warm-up/core/prehab block)
   const FLARE_PREHAB = {
@@ -130,12 +159,47 @@
     ],
   };
 
+
+  // Jon's core menu — he picks from these on a given day (every step is skippable).
+  // kind: check | sets (sets×reps steppers) | stopwatch (log seconds, last/best shown)
+  // days: 'lower' | 'upper' -> only appears on that day type. optional overrides: flare.{flag}.optional
+  const HANG_SHOULDER = 'Shoulder flare: hanging loads the R shoulder — floor version instead';
+  const CORE_STEPS = [
+    { id: 'mcgill', title: 'McGill Big 3', detail: 'Curl-up · side plank · bird dog' },
+    { id: 'hlr', title: 'Hanging leg raises, med ball between feet', detail: 'Usual add-on to the Big 3 — 15–20 reps', kind: 'sets', sets: 4, reps: 15,
+      flare: { back: { optional: true, detail: 'Back flare: optional — slow, no swinging, smaller range; skip if the back talks' },
+               shoulder: { title: 'Lying leg raises, med ball between feet', detail: HANG_SHOULDER + ' — low back pressed down' } } },
+    { id: 'l90', title: 'Hanging straight-leg 90° hold', detail: 'Max time — tap Start, tap again to log', kind: 'stopwatch',
+      flare: { back: { optional: true, detail: 'Back flare: optional — stop at the first back tension' },
+               shoulder: { title: 'Floor straight-leg hold (lying hollow / legs up)', detail: HANG_SHOULDER } } },
+    { id: 'creed', title: 'Creed hanging abs — 10 each', detail: 'Straight-leg leg lifts · alternating single-leg knee-ups · alternating cross-body single-leg knee-ups. Optional finisher: 90° straight-leg hold if energy left',
+      flare: { back: { optional: true, detail: 'Back flare: optional — knee-ups only, slow and controlled' },
+               shoulder: { title: 'Floor Creed abs — 10 each', detail: HANG_SHOULDER + ': lying leg lifts · alternating knee-ups · cross-body knee-ups (dead-bug style)' } } },
+    { id: 'birddog', title: 'Bird dog — elbow-to-knee + 5s hold', detail: 'On all fours, lift opposite hand and knee, touch elbow to knee underneath, then extend and hold 5 sec. 5 reps each side' },
+    { id: 'clam', title: 'Side-lying clamshells', detail: '5 sec hold ×5 each side', days: 'lower' },
+    { id: 'sideplank', title: 'Side plank, top leg lifted', detail: '5 sec hold ×5 each side', days: 'upper',
+      flare: { shoulder: { detail: 'Shoulder flare: on the right side go from the knees or swap for clamshells' } } },
+  ];
+
+  // Shoulder prehab (upper days, right after Core). ER alternates DB ⇄ band each session.
+  const LIGHT = { detail: 'Shoulder flare: light band, pain-free range only' };
+  const PREHAB_STEPS = [
+    { id: 'er', title: 'External rotation', detail: 'Alternates each session — tap A/B to switch', kind: 'sets', sets: 2, reps: 12,
+      choices: [{ id: 'db', label: 'A · DB', title: 'DB external rotation', weight: true }, { id: 'band', label: 'B · Band', title: 'Banded external rotation' }], choice: 'db', w: '',
+      flare: { shoulder: { detail: 'Shoulder flare: light band / lightest DB, pain-free range only' } } },
+    { id: 'pullapart', title: 'Banded ER pull-aparts — up & down', detail: 'Pull-aparts going up and down', kind: 'sets', sets: 2, reps: 12, flare: { shoulder: LIGHT } },
+    { id: 'wallwalk', title: 'Banded wall walks', detail: 'Wall slides with band', kind: 'sets', sets: 2, reps: 10, flare: { shoulder: LIGHT } },
+    { id: 'spider', title: 'Spider walks', detail: 'Fingers walking up and down the wall', kind: 'sets', sets: 2, reps: 10,
+      flare: { shoulder: { detail: 'Shoulder flare: only walk as high as stays pain-free' } } },
+    { id: 'bandbench', title: 'Banded bench press motion', detail: 'Always finish with this', kind: 'sets', sets: 2, reps: 15, flare: { shoulder: LIGHT } },
+  ];
+  const BLOCKS = { warmup: { title: 'Warm-up', steps: WARMUP_STEPS, holdLabel: 'hang' }, core: { title: 'Core', steps: CORE_STEPS, holdLabel: '90° hold' }, shoulder_prehab: { title: 'Shoulder prehab', steps: PREHAB_STEPS, holdLabel: 'hold' } };
   // ---- template helpers
   // S(n, {r,w,t}) -> n identical sets ; L([...]) explicit list
   const S = (n, o = {}) => Array.from({ length: n }, () => ({ r: o.r ?? '', w: o.w ?? '', t: o.t ?? '' }));
   const L = (arr) => arr.map((o) => ({ r: o.r ?? '', w: o.w ?? '', t: o.t ?? '' }));
   const I = (ex, sets, extra = {}) => Object.assign({ ex, sets }, extra);
-  const C = (ex) => ({ ex, sets: S(1) }); // checkbox item
+  const C = (ex) => (BLOCKS[ex] ? { ex, sets: S(1), steps: JSON.parse(JSON.stringify(BLOCKS[ex].steps)) } : { ex, sets: S(1) }); // checkbox item (warm-up / core blocks carry their steps)
 
   const templates = [
     {
@@ -148,10 +212,10 @@
         I('squat_5x5x', L([{ r: 4, w: 135 }, { r: 4, w: 165 }, { r: 4, w: 185 }]), { group: 'A', note: '5s eccentric · 5s hold · explode up' }),
         I('knee_tuck', S(3, { r: 3 }), { group: 'A' }),
         I('ghr_explosive', S(3, { r: 3, t: 10 }), { note: 'Set count not logged — adjust' }),
-        I('depth_drop_jump', S(2, { r: 6 })),
-        I('sgdl_band', S(2, { r: 10 })),
-        I('physio_curl', S(2, { r: 20 })),
-        I('stir_pot', S(2, { r: 10 })),
+        I('depth_drop_jump', S(2, { r: 6 }), { group: 'B' }),
+        I('sgdl_band', S(2, { r: 10 }), { group: 'B' }),
+        I('physio_curl', S(2, { r: 20 }), { group: 'C' }),
+        I('stir_pot', S(2, { r: 10 }), { group: 'C' }),
         I('deep_squat_hops', S(2)),
         I('box_jumps_consec', S(2)),
       ],
@@ -163,7 +227,7 @@
         I('plyo_pushup', S(3, { r: 3 })),
         I('mb_front', S(2, { r: 5 })),
         I('mb_side', S(1, { r: 5 }), { note: 'Each side' }),
-        I('pullup_iso_explosive', S(3, { r: 3, w: 90, t: 10 }), { group: 'EDI', note: '10s hold @ 90 lb, then 3 explosive pull-ups' }),
+        I('pullup_iso_explosive', S(3, { r: 3, w: 90, t: 10 }), { group: 'EDI', note: '10s hold with +90 lb belt, then 3 explosive pull-ups' }),
         I('cgbench_iso_rebound', S(3, { r: 5, w: 135, t: 10 }), { group: 'EDI', note: '10s overcoming iso @ 135, then 5 rebound push-ups' }),
         I('rebounds', S(2)),
         I('lat_raise', S(3)),
@@ -327,5 +391,5 @@
     ], 'Sore shoulder — DB bench instead of barbell'),
   ];
 
-  window.HB_SEED = { library, templates, history, FLARE_PREHAB };
+  window.HB_SEED = { library, templates, history, FLARE_PREHAB, WARMUP_STEPS, CORE_STEPS, PREHAB_STEPS, BLOCKS };
 })();
